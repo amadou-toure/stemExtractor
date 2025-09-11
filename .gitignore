@@ -1,1 +1,41 @@
+# Binaire compilé
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Fichiers objets
+*.o
+*.a
+
+# Cache de compilation Go
+/pkg/
+/bin/
+/vendor/
+
+# Modules Go (go mod tidy les recrée)
+go.sum
+
+# Fichiers d'exécution temporaires
+*.log
+*.tmp
+
+# Dossiers de travail ou résultats temporaires
+storage/
+separated/
 **/*.mp3
+**/*.wav
+/tmp/
+*.zip
+
+# IDE / éditeurs
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Fichiers Swagger générés
+docs/
