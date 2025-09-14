@@ -17,4 +17,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Déclare le point d’entrée de l’application
-CMD ["demucs", "--help"]
+CMD ["demucs", "--out", "./storage"]

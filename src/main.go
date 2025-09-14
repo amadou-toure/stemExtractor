@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	utils "stemExtractor/utils"
@@ -19,7 +18,7 @@ func main() {
 		BodyLimit:     10 * 1024 * 1024,
 		ServerHeader:  "Fiber"})
 	app.Get("/", func(c *fiber.Ctx) error {
-		utils.CompressToZip("../storage/uploads","../storage/zipped","Baby I'm Yours - Breakbot")
+		utils.CompressToZip("../storage/separated/htdemucs/Starship Syncopation - Cory Wong","../storage/zipped","starship-syncopation")
 		return c.SendString("Hello, World!")
 	})
 	app.Post("/unmix",func(c *fiber.Ctx)error{
@@ -34,27 +33,32 @@ func main() {
 	
 		//sauvegarde dans le repertoire
 
-		savePath := fmt.Sprintf("./%s", fileHeader.Filename)
+		savePath := fmt.Sprintf("../storage/uploads/%s", fileHeader.Filename)
 		err = c.SaveFile(fileHeader, savePath)
 		if (err!=nil){
 			return c.Status(500).SendString("erreur pendant la sauvegarde: "+err.Error())
 		}
 		//execution de la separation
-		pwd, err := os.Getwd()
+		uploadFolder,err:=filepath.Abs("../storage/uploads")
 		if err != nil {
 			return c.Status(500).SendString("Erreur obtention du chemin courant: " + err.Error())
 		}
-		cmd := exec.Command("docker", "run", "-v", fmt.Sprintf("%s:/app", pwd), "demucs-cpu", "demucs", "/app/"+fileHeader.Filename)
+		resultFolder,err:=filepath.Abs("../storage/separated")
+		if err != nil {
+			return c.Status(500).SendString("Erreur obtention du chemin courant: " + err.Error())
+		}
+		cmd := exec.Command("docker", "run", "-v", fmt.Sprintf("%s:/app", uploadFolder), "-v", fmt.Sprintf("%s:/app/separated", resultFolder), "demucs-cpu", "demucs", "/app/"+fileHeader.Filename)
 		// Récupérer la sortie
 		output, err := cmd.CombinedOutput()
+		fmt.Println(string(output))
 		if (err != nil){
-			fmt.Println(output)
+			fmt.Println(string(output))
 			return c.Status(500).SendString("Erreur de la sortie")
 		}
-	
 		//compression de des pistes
+		utils.CompressToZip(savePath,"../storage/zipped",stemDirName)
 
-	return c.SendFile("./"+stemDirName+".zip")
+	return c.SendFile("../storage/zipped/"+stemDirName+".zip")
 	})
 	app.Listen(":3000")
 }

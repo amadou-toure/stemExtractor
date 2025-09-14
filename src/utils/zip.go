@@ -10,7 +10,7 @@ import (
 )
  func CompressToZip(sourceDir string,zipPath string, fileName string) error {
 
-	zipFile,err:= os.Create(zipPath+fileName)
+	zipFile,err:= os.Create(zipPath+"/"+fileName+".zip")
 	if err != nil {
 		return fmt.Errorf("Erreur création fichier zip: "+err.Error())
 	}
