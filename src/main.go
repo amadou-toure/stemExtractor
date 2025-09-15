@@ -2,12 +2,16 @@ package main
 
 import (
 	"fmt"
-	"os/exec"
+	"os"
+
 	"path/filepath"
 	utils "stemExtractor/utils"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
+
+
 
 func main() {
 	app := fiber.New(
@@ -15,50 +19,64 @@ func main() {
 		Prefork:       false,
 		CaseSensitive: true,
 		StrictRouting: true,
-		BodyLimit:     10 * 1024 * 1024,
+		BodyLimit:     1024 * 1024 * 1024, //1GB
 		ServerHeader:  "Fiber"})
 	app.Get("/", func(c *fiber.Ctx) error {
 		utils.CompressToZip("../storage/separated/htdemucs/Starship Syncopation - Cory Wong","../storage/zipped","starship-syncopation")
 		return c.SendString("Hello, World!")
 	})
-	app.Post("/unmix",func(c *fiber.Ctx)error{
+	app.Get("/status/:id",func (c *fiber.Ctx) error {
+		jobId:=c.Params("id")
+		
+		status:=utils.GetJobStatus(jobId)
 
+		return c.Status(200).SendString(status)
+	})
+	
+
+	app.Get("/download/:id", func(c *fiber.Ctx) error {
+	    jobId := c.Params("id")
+	    filePath := fmt.Sprintf("../storage/zipped/%s.zip", jobId)
+
+	    f, err := os.Open(filePath)
+	    if err != nil {
+	        return c.Status(500).SendString("Erreur ouverture fichier: " + err.Error())
+	    }
+
+	    fileInfo, err := f.Stat()
+	    if err != nil {
+	        f.Close()
+	        return c.Status(500).SendString("Erreur récupération info fichier: " + err.Error())
+	    }
+
+	    c.Set("Content-Type", "application/zip")
+	    c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.zip\"", jobId))
+	    c.Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
+
+	    return c.SendStream(f)
+	})
+	
+
+	app.Post("/unmix",func(c *fiber.Ctx)error{
+		jobId:= uuid.New().String()
 		//reception et formattage du fichier
 		fileHeader, err := c.FormFile("file")
 		if err != nil {
 			return c.Status(400).SendString(fmt.Sprintf("Erreur lecture fichier: %v", err))
 		}
-		base:= filepath.Base(fileHeader.Filename)
-		stemDirName:= base[:len(base)-len(filepath.Ext(base))] //nom du fichier audio sans l'extention pour avoir le nom du repertoire dans lequel est stoquee les stem
-	
-		//sauvegarde dans le repertoire
-
-		savePath := fmt.Sprintf("../storage/uploads/%s", fileHeader.Filename)
+		savePath := fmt.Sprintf("../storage/uploads/%s", jobId+filepath.Ext(fileHeader.Filename))
 		err = c.SaveFile(fileHeader, savePath)
 		if (err!=nil){
 			return c.Status(500).SendString("erreur pendant la sauvegarde: "+err.Error())
 		}
-		//execution de la separation
-		uploadFolder,err:=filepath.Abs("../storage/uploads")
-		if err != nil {
-			return c.Status(500).SendString("Erreur obtention du chemin courant: " + err.Error())
-		}
-		resultFolder,err:=filepath.Abs("../storage/separated")
-		if err != nil {
-			return c.Status(500).SendString("Erreur obtention du chemin courant: " + err.Error())
-		}
-		cmd := exec.Command("docker", "run", "-v", fmt.Sprintf("%s:/app", uploadFolder), "-v", fmt.Sprintf("%s:/app/separated", resultFolder), "demucs-cpu", "demucs", "/app/"+fileHeader.Filename)
-		// Récupérer la sortie
-		output, err := cmd.CombinedOutput()
-		fmt.Println(string(output))
-		if (err != nil){
-			fmt.Println(string(output))
-			return c.Status(500).SendString("Erreur de la sortie")
-		}
-		//compression de des pistes
-		utils.CompressToZip(savePath,"../storage/zipped",stemDirName)
+		
+		go utils.UseDemucs(jobId)//lancement de l'unmixing
+	return c.Status(200).SendString("job id:"+jobId)
+		//sauvegarde dans le repertoire
 
-	return c.SendFile("../storage/zipped/"+stemDirName+".zip")
+		
+
+	// return c.SendFile("../storage/zipped/"+stemDirName+".zip")
 	})
 	app.Listen(":3000")
 }
