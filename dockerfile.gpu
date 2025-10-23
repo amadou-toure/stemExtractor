@@ -1,0 +1,44 @@
+# ===============================
+# Étape 1 : Image de base CUDA
+# ===============================
+FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+# ===============================
+# Étape 2 : Préparation du système
+# ===============================
+RUN apt update && apt install -y \
+    python3 \
+    python3-pip \
+    git \
+    ffmpeg \
+    libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ===============================
+# Étape 3 : Dossier de travail
+# ===============================
+WORKDIR /app
+
+# ===============================
+# Étape 4 : Copie des dépendances
+# ===============================
+COPY requirements.txt .
+
+# ===============================
+# Étape 5 : Installation des dépendances Python
+# ===============================
+RUN pip install --upgrade pip && \
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 && \
+    pip install -r requirements.txt && \
+    pip install demucs
+
+# ===============================
+# Étape 6 : Copie du code source
+# ===============================
+COPY . .
+
+# ===============================
+# Étape 7 : Commande par défaut
+# ===============================
+# tu peux changer le format (flac, mp3, wav, etc.)
+CMD ["demucs", "--device", "cuda", "--flac", "--out", "./storage"]
