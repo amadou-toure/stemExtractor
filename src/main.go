@@ -79,5 +79,5 @@ func main() {
 		go utils.UseDemucs(jobId) //lancement de l'unmixing
 		return c.Status(200).SendString(jobId)
 	})
-	app.Listen(":3000")
+	app.Listen("0.0.0.0:3000")
 }

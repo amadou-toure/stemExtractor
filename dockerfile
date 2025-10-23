@@ -17,4 +17,6 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Déclare le point d’entrée de l’application
-CMD ["demucs", "--out", "./storage"]
+# CMD ["demucs", "--out", "./storage"]
+CMD ["demucs", "--flac", "--out", "./storage"]
+# CMD ["demucs", "--mp3", "--mp3-bitrate", "192", "--out", "./storage"]
