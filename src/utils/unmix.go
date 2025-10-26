@@ -18,7 +18,7 @@ func UseDemucs(jobId string) error {
 		return fmt.Errorf("Erreur obtention du chemin courant: " + err.Error())
 	}
 	SetJobStatus("pending", jobId)
-	cmd := exec.Command("docker", "run", "--rm", "-v", fmt.Sprintf("%s:/app", uploadFolder), "-v", fmt.Sprintf("%s:/app/separated", resultFolder), "demucs-cpu", "demucs", "/app/"+jobId+".mp3")
+	cmd := exec.Command("docker", "run", "--rm", "-v", fmt.Sprintf("%s:/app", uploadFolder), "-v", fmt.Sprintf("%s:/app/separated", resultFolder), "demucs-gpu", "demucs", "/app/"+jobId+".mp3")
 	// Récupérer la sortie
 	output, err := cmd.CombinedOutput()
 	fmt.Println(string(output))
