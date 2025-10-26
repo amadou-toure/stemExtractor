@@ -22,7 +22,7 @@ func main() {
 			BodyLimit:     1024 * 1024 * 1024, //1GB
 			ServerHeader:  "Fiber"})
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:8081, http://127.0.0.1:8081",
+		AllowOrigins: "*",
 		AllowMethods: "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
 		AllowHeaders: "*",
 	}))
